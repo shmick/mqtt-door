@@ -24,7 +24,7 @@ client.connect(mqtt_host)
 
 def door_state(name, state):
     print(f"topic=stat/garage/{name} payload={state}")
-    client.publish(f"stat/garage/{name}", payload=state, qos=0, retain=False)
+    client.publish(f"stat/garage/{name}", payload=state, qos=0, retain=True)
 
 
 def door_button(name):
