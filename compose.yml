@@ -1,0 +1,10 @@
+version: "3"
+services:
+  homeassistant:
+    container_name: mqtt-door
+    image: docker.pkg.github.com/shmick/mqtt-door/mqtt-door:latest
+    restart: unless-stopped
+    environment:
+      MQTT_USER: username
+      MQTT_PASSWD: password
+      MQTT_HOST: hostname
