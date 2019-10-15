@@ -93,6 +93,6 @@ client.on_message = on_message
 sleep(3)
 
 while True:
-    client.loop(0.1)
+    client.loop()
     door_north()
     door_south()
