@@ -57,11 +57,9 @@ def on_message(client, userdata, msg):
 def check_door(door, sensor, state):
     if sensor == True and (state == "open" or state == "unset"):
         state = "closed"
-        print(door + state)
         report_state(door, state)
     elif sensor == False and (state == "open" or state == "unset"):
         state = "open"
-        print(door + state)
         report_state(door, state)
     return state
 
