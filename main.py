@@ -1,6 +1,7 @@
 from gpiozero import Button, LED
 import paho.mqtt.client as mqtt
 from time import sleep
+import json
 import os
 
 mqtt_user = os.environ["MQTT_USER"]
@@ -24,8 +25,9 @@ south_state = "unset"
 
 # Report the state of the door via MQTT
 def report_state(door, state):
-    print(f"topic=stat/garage/{door} payload={state}")
-    client.publish(f"stat/garage/{door}", payload=state, qos=1, retain=True)
+    payload = json.dumps({"state": state})
+    print(f"topic=stat/garage/{door} payload={payload}")
+    client.publish(f"stat/garage/{door}", payload=payload, qos=1, retain=True)
 
 
 # Trigger a relay pulse to open or close the door based on the door name
@@ -58,7 +60,7 @@ def check_door(door, sensor, state):
     if sensor == True and (state == "open" or state == "unset"):
         state = "closed"
         report_state(door, state)
-    elif sensor == False and (state == "open" or state == "unset"):
+    elif sensor == False and (state == "closed" or state == "unset"):
         state = "open"
         report_state(door, state)
     return state
@@ -72,3 +74,4 @@ while True:
     client.loop()
     north_state = check_door("north", sensor_north.is_pressed, north_state)
     south_state = check_door("south", sensor_south.is_pressed, south_state)
+    sleep(0.2)
