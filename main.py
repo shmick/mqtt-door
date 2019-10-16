@@ -10,9 +10,6 @@ mqtt_host = os.environ["MQTT_HOST"]
 sensor_north = Button(12, bounce_time=3)
 sensor_south = Button(16, bounce_time=3)
 
-north_state = ""
-south_state = ""
-
 # Use LED to utilize blink() to pulse the relay
 relay_north = LED(5, active_high=False)
 relay_south = LED(6, active_high=False)
@@ -21,17 +18,22 @@ client = mqtt.Client()
 client.username_pw_set(mqtt_user, password=mqtt_passwd)
 client.connect(mqtt_host)
 
+# Required to allow the state of the doors to be learned upon startup
+north_state = "unset"
+south_state = "unset"
 
-def door_state(name, state):
-    print(f"topic=stat/garage/{name} payload={state}")
-    client.publish(f"stat/garage/{name}", payload=state, qos=1, retain=True)
+# Report the state of the door via MQTT
+def report_state(door, state):
+    print(f"topic=stat/garage/{door} payload={state}")
+    client.publish(f"stat/garage/{door}", payload=state, qos=1, retain=True)
 
 
+# Trigger a relay pulse to open or close the door based on the door name
 def door_button(name):
     print(f"The {name} door relay was activated")
     if name == "north":
         relay_north.blink(on_time=0.5, n=1, background=True)
-    if name == "south":
+    elif name == "south":
         relay_south.blink(on_time=0.5, n=1, background=True)
 
 
@@ -44,55 +46,31 @@ def on_connect(client, userdata, flags, rc):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    # print(msg.topic + " " + str(msg.payload))
     print(f"{msg.topic} {msg.payload}")
     if msg.topic == "cmnd/garage/north":
         door_button("north")
-    if msg.topic == "cmnd/garage/south":
+    elif msg.topic == "cmnd/garage/south":
         door_button("south")
 
 
-def door_north():
-    global north_state
-    name = "north"
-    if sensor_north.is_pressed == True and north_state == "":
-        north_state = "closed"
-        door_state(name, north_state)
-    elif sensor_north.is_pressed == False and north_state == "":
-        north_state = "open"
-        door_state(name, north_state)
-    elif sensor_north.is_pressed == True and north_state == "open":
-        north_state = "closed"
-        door_state(name, north_state)
-    elif sensor_north.is_pressed == False and north_state == "closed":
-        north_state = "open"
-        door_state(name, north_state)
-
-
-def door_south():
-    global south_state
-    name = "south"
-    if sensor_south.is_pressed == True and south_state == "":
-        south_state = "closed"
-        door_state(name, south_state)
-    elif sensor_south.is_pressed == False and south_state == "":
-        south_state = "open"
-        door_state(name, south_state)
-    elif sensor_south.is_pressed == True and south_state == "open":
-        south_state = "closed"
-        door_state(name, south_state)
-    elif sensor_south.is_pressed == False and south_state == "closed":
-        south_state = "open"
-        door_state(name, south_state)
+# Determines if the door state has changed
+def check_door(door, sensor, state):
+    if sensor == True and (state == "open" or state == "unset"):
+        state = "closed"
+        print(door + state)
+        report_state(door, state)
+    elif sensor == False and (state == "open" or state == "unset"):
+        state = "open"
+        print(door + state)
+        report_state(door, state)
+    return state
 
 
 client.on_connect = on_connect
 client.on_message = on_message
-
-# Give the mqtt client time to connect
 sleep(3)
 
 while True:
     client.loop()
-    door_north()
-    door_south()
+    north_state = check_door("north", sensor_north.is_pressed, north_state)
+    south_state = check_door("south", sensor_south.is_pressed, south_state)
