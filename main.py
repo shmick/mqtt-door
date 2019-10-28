@@ -20,8 +20,8 @@ client.username_pw_set(mqtt_user, password=mqtt_passwd)
 client.connect(mqtt_host)
 
 # Required to allow the state of the doors to be learned upon startup
-north_state = "unset"
-south_state = "unset"
+north_state = None
+south_state = None
 
 # Report the state of the door via MQTT
 def report_state(door, state):
@@ -57,10 +57,10 @@ def on_message(client, userdata, msg):
 
 # Determines if the door state has changed
 def check_door(door, sensor, state):
-    if sensor == True and (state == "open" or state == "unset"):
+    if sensor == True and (state == "open" or state == None):
         state = "closed"
         report_state(door, state)
-    elif sensor == False and (state == "closed" or state == "unset"):
+    elif sensor == False and (state == "closed" or state == None):
         state = "open"
         report_state(door, state)
     return state
@@ -71,7 +71,17 @@ client.on_message = on_message
 sleep(3)
 
 while True:
-    client.loop()
+    rc = client.loop()
+    if rc != mqtt.MQTT_ERR_SUCCESS:
+        try:
+            # todo, don't block. Calculate time for reconnect.
+            time.sleep(1.0)
+            # todo, don't try to reconnect every failed loop iteration
+            print(f"something happened, attempting to reconnect to MQTT")
+            client.reconnect()
+        except (socket.error, mqtt.WebsocketConnectionError):
+            pass
+
     north_state = check_door("north", sensor_north.is_pressed, north_state)
     south_state = check_door("south", sensor_south.is_pressed, south_state)
     sleep(0.2)
