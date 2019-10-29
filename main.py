@@ -75,7 +75,7 @@ while True:
     if rc != mqtt.MQTT_ERR_SUCCESS:
         try:
             # todo, don't block. Calculate time for reconnect.
-            time.sleep(1.0)
+            sleep(1.0)
             # todo, don't try to reconnect every failed loop iteration
             print(f"something happened, attempting to reconnect to MQTT")
             client.reconnect()
