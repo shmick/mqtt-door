@@ -1,4 +1,4 @@
-from gpiozero import Button, LED
+from gpiozero import LineSensor, LED
 import paho.mqtt.client as mqtt
 from time import sleep
 import json
@@ -8,8 +8,8 @@ mqtt_user = os.environ["MQTT_USER"]
 mqtt_passwd = os.environ["MQTT_PASSWD"]
 mqtt_host = os.environ["MQTT_HOST"]
 
-sensor_north = Button(12, bounce_time=3)
-sensor_south = Button(16, bounce_time=3)
+sensor_north = LineSensor(12, pull_up=True, queue_len=50)
+sensor_south = LineSensor(16, pull_up=True, queue_len=50)
 
 # Use LED to utilize blink() to pulse the relay
 relay_north = LED(5, active_high=False)
@@ -20,8 +20,8 @@ client.username_pw_set(mqtt_user, password=mqtt_passwd)
 client.connect(mqtt_host)
 
 # Required to allow the state of the doors to be learned upon startup
-north_state = None
-south_state = None
+state_north = None
+state_south = None
 
 # Report the state of the door via MQTT
 def report_state(door, state):
@@ -30,23 +30,27 @@ def report_state(door, state):
     client.publish(f"stat/garage/{door}", payload=payload, qos=1, retain=True)
 
 
-# Trigger a relay pulse to open or close the door based on the door name
+# Trigger a relay pulse to open or close the door based on the door name and payload
 def door_button(name, payload):
-    print(f"The {name} door relay was activated with payload {payload}")
     if name == "north":
-        if (payload == "open" and north_state == "open") or (
-            payload == "close" and north_state == "closed"
-        ):
-            print(f"{name} is already {north_state}")
-        else:
-            relay_north.blink(on_time=0.5, n=1, background=True)
-    elif name == "south":
-        if (payload == "open" and south_state == "open") or (
-            payload == "close" and south_state == "closed"
-        ):
-            print(f"{name} is already {south_state}")
-        else:
-            relay_south.blink(on_time=0.5, n=1, background=True)
+        state = state_north
+        relay = relay_north
+    if name == "south":
+        state = state_south
+        relay = relay_south
+
+    # If the payload matches the current state of the door, don't do anything
+    if (payload == "open" and state == "open") or (
+        payload == "close" and state == "closed"
+    ):
+        print(f"The {name} door is already {state}")
+    # If the payload is opposite of the current state of the door, push the button
+    elif payload in ["open", "close"]:
+        print(f"The {name} door relay was activated with payload: {payload}")
+        relay.blink(on_time=0.5, n=1, background=True)
+    # If the payload is not open or close, print a message with the invalid payload
+    else:
+        print(f"The {name} door relay was activated with invalid payload: {payload}")
 
 
 # The callback for when the client receives a CONNACK response from the server.
@@ -93,6 +97,6 @@ while True:
         except (socket.error, mqtt.WebsocketConnectionError):
             pass
 
-    north_state = check_door("north", sensor_north.is_pressed, north_state)
-    south_state = check_door("south", sensor_south.is_pressed, south_state)
+    state_north = check_door("north", sensor_north.is_active, state_north)
+    state_south = check_door("south", sensor_south.is_active, state_south)
     sleep(0.2)
