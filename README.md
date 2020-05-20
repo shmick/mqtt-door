@@ -16,7 +16,7 @@ payload = {"state": "STATE"}
 ## MQTT Command
 ```
 topic = cmnd/garage/NAME 
-payload = relay
+payload = open or close
 ```
 
 ## Home Assistant Sensor
