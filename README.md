@@ -28,17 +28,18 @@ sensor garage_north:
     value_template: "{{ value_json.state }}"
 ```
 
-## Home Assistant Switch
+## Home Assistant Cover
 ```yaml
-switch garage_north:
+cover garage_north:
   - platform: mqtt
     name: "Garage North"
+    device_class: garage
     state_topic: "stat/garage/north"
     command_topic: "cmnd/garage/north"
-    payload_on: "relay"
-    payload_off: "relay"
-    state_off: '{"state": "closed"}'
-    state_on: '{"state": "open"}'
+    payload_open: "open"
+    payload_close: "close"
+    state_closed: '{"state": "closed"}'
+    state_open: '{"state": "open"}'
     qos: 1
     retain: false
 ```

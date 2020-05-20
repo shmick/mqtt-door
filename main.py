@@ -31,12 +31,22 @@ def report_state(door, state):
 
 
 # Trigger a relay pulse to open or close the door based on the door name
-def door_button(name):
-    print(f"The {name} door relay was activated")
+def door_button(name, payload):
+    print(f"The {name} door relay was activated with payload {payload}")
     if name == "north":
-        relay_north.blink(on_time=0.5, n=1, background=True)
+        if (payload == "open" and north_state == "open") or (
+            payload == "close" and north_state == "closed"
+        ):
+            print(f"{name} is already {north_state}")
+        else:
+            relay_north.blink(on_time=0.5, n=1, background=True)
     elif name == "south":
-        relay_south.blink(on_time=0.5, n=1, background=True)
+        if (payload == "open" and south_state == "open") or (
+            payload == "close" and south_state == "closed"
+        ):
+            print(f"{name} is already {south_state}")
+        else:
+            relay_south.blink(on_time=0.5, n=1, background=True)
 
 
 # The callback for when the client receives a CONNACK response from the server.
@@ -48,11 +58,12 @@ def on_connect(client, userdata, flags, rc):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    print(f"{msg.topic} {msg.payload}")
+    payload = msg.payload.decode("utf-8")
+    print(f"{msg.topic} {payload}")
     if msg.topic == "cmnd/garage/north":
-        door_button("north")
+        door_button("north", payload)
     elif msg.topic == "cmnd/garage/south":
-        door_button("south")
+        door_button("south", payload)
 
 
 # Determines if the door state has changed
