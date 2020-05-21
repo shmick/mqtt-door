@@ -35,14 +35,15 @@ def door_button(name, payload):
     if name == "north":
         state = state_north
         relay = relay_north
-    if name == "south":
+    elif name == "south":
         state = state_south
         relay = relay_south
 
+    already_open = payload == "open" and state == "open"
+    already_closed = payload == "close" and state == "closed"
+
     # If the payload matches the current state of the door, don't do anything
-    if (payload == "open" and state == "open") or (
-        payload == "close" and state == "closed"
-    ):
+    if already_open or already_closed:
         print(f"The {name} door is already {state}")
     # If the payload is opposite of the current state of the door, push the button
     elif payload in ["open", "close"]:
@@ -72,11 +73,14 @@ def on_message(client, userdata, msg):
 
 # Determines if the door state has changed
 def check_door(door, sensor, state):
-    if sensor == True and (state == "open" or state == None):
-        state = "closed"
-        report_state(door, state)
-    elif sensor == False and (state == "closed" or state == None):
-        state = "open"
+    now_closed = sensor == True and (state == "open" or state == None)
+    now_open = sensor == False and (state == "closed" or state == None)
+
+    if now_closed or now_open:
+        if now_closed:
+            state = "closed"
+        elif now_open:
+            state = "open"
         report_state(door, state)
     return state
 
@@ -100,3 +104,4 @@ while True:
     state_north = check_door("north", sensor_north.is_active, state_north)
     state_south = check_door("south", sensor_south.is_active, state_south)
     sleep(0.2)
+

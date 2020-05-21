@@ -1,6 +1,6 @@
 # mqtt-door
 
-Use [gpiozero](https://gpiozero.readthedocs.io/en/stable/) to read the state of the magnetic reed sensors on the doors and control the doors via a relays connected to GPIO pins
+Use [gpiozero](https://gpiozero.readthedocs.io/en/stable/) to read the state of the magnetic reed sensors on the doors and control the doors via relays connected to GPIO pins
 
 Use [paho-mqtt](https://pypi.org/project/paho-mqtt/) to publish MQTT status messages and subscribe to command messages
 
