@@ -36,8 +36,8 @@ cover garage_north:
     device_class: garage
     state_topic: "stat/garage/north"
     command_topic: "cmnd/garage/north"
-    payload_open: "open"
-    payload_close: "close"
+    payload_open: "OPEN"
+    payload_close: "CLOSE"
     state_closed: '{"state": "closed"}'
     state_open: '{"state": "open"}'
     qos: 1

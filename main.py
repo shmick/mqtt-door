@@ -23,6 +23,10 @@ client.connect(mqtt_host)
 state_north = None
 state_south = None
 
+# Home Assistant defaults
+payload_open = "OPEN"
+payload_close = "CLOSE"
+
 # Report the state of the door via MQTT
 def report_state(door, state):
     payload = json.dumps({"state": state})
@@ -39,14 +43,14 @@ def door_button(name, payload):
         state = state_south
         relay = relay_south
 
-    already_open = payload == "open" and state == "open"
-    already_closed = payload == "close" and state == "closed"
+    already_open = payload == payload_open and state == "open"
+    already_closed = payload == payload_close and state == "closed"
 
     # If the payload matches the current state of the door, don't do anything
     if already_open or already_closed:
         print(f"The {name} door is already {state}")
     # If the payload is opposite of the current state of the door, push the button
-    elif payload in ["open", "close"]:
+    elif payload in [payload_open, payload_close]:
         print(f"The {name} door relay was activated with payload: {payload}")
         relay.blink(on_time=0.5, n=1, background=True)
     # If the payload is not open or close, print a message with the invalid payload
@@ -104,4 +108,3 @@ while True:
     state_north = check_door("north", sensor_north.is_active, state_north)
     state_south = check_door("south", sensor_south.is_active, state_south)
     sleep(0.2)
-
